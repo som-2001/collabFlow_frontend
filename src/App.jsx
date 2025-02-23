@@ -104,9 +104,12 @@ const App = () => {
       >
         {isMuted ? "Unmute" : "Mute"}
       </button>
-     
       <div>
-       
+        <h3>My Audio</h3>
+        <audio ref={myAudioRef} autoPlay muted></audio>
+      </div>
+      <div>
+        <h3>Remote Audio</h3>
         <audio ref={remoteAudioRef} autoPlay></audio>
       </div>
     </div>
