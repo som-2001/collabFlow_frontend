@@ -6,6 +6,8 @@ const App = () => {
   const [remotePeerId, setRemotePeerId] = useState("");
   const [peer, setPeer] = useState(null);
   const [call, setCall] = useState(null);
+  const [isMuted, setIsMuted] = useState(false); // ✅ Track mute state
+  const [myStream, setMyStream] = useState(null); // ✅ Store local stream
 
   const myAudioRef = useRef();
   const remoteAudioRef = useRef();
@@ -14,8 +16,8 @@ const App = () => {
     const newPeer = new Peer(undefined, {
       host: "collabflow-backend.onrender.com",
       port: 443,
-      path: "/peerjs", // ✅ Ensure it matches the backend path
-      secure: true, // ✅ Important for local development
+      path: "/peerjs",
+      secure: true,
     });
 
     newPeer.on("open", (id) => {
@@ -24,6 +26,7 @@ const App = () => {
 
     newPeer.on("call", (incomingCall) => {
       navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+        setMyStream(stream); // ✅ Store stream globally
         myAudioRef.current.srcObject = stream;
         incomingCall.answer(stream);
         incomingCall.on("stream", (remoteStream) => {
@@ -38,6 +41,7 @@ const App = () => {
 
   const callPeer = () => {
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      setMyStream(stream); // ✅ Store stream globally
       myAudioRef.current.srcObject = stream;
       const outgoingCall = peer.call(remotePeerId, stream);
       outgoingCall.on("stream", (remoteStream) => {
@@ -52,6 +56,14 @@ const App = () => {
       call.close();
       setCall(null);
       remoteAudioRef.current.srcObject = null;
+    }
+  };
+
+  const toggleMute = () => {
+    if (myStream) {
+      const audioTrack = myStream.getAudioTracks()[0]; // Get audio track
+      audioTrack.enabled = !audioTrack.enabled; // Toggle audio
+      setIsMuted(!audioTrack.enabled); // Update state
     }
   };
 
@@ -79,6 +91,18 @@ const App = () => {
         style={{ padding: "10px", margin: "10px" }}
       >
         End Call
+      </button>
+      <button
+        onClick={toggleMute}
+        disabled={!call}
+        style={{
+          padding: "10px",
+          margin: "10px",
+          backgroundColor: isMuted ? "red" : "green",
+          color: "white",
+        }}
+      >
+        {isMuted ? "Unmute" : "Mute"}
       </button>
       <div>
         <h3>My Audio</h3>
