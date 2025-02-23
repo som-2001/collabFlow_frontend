@@ -15,7 +15,7 @@ const App = () => {
       host: "https://collabflow-backend.onrender.com",
       port: 443,
       path: "/peerjs", // ✅ Ensure it matches the backend path
-      secure: false, // ✅ Important for local development
+      secure: true, // ✅ Important for local development
     });
 
     newPeer.on("open", (id) => {
