@@ -8,6 +8,7 @@ const App = () => {
   const [call, setCall] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [myStream, setMyStream] = useState(null);
+  const [isHide,setIsHide]=useState(false);
 
   const myVideoRef = useRef(); // ✅ Local video
   const remoteVideoRef = useRef(); // ✅ Remote video
@@ -71,6 +72,15 @@ const App = () => {
     }
   };
 
+  const toggleVideo = () => {
+    if (myStream) {
+      const videoTrack = myStream.getVideoTracks()[0];
+      videoTrack.enabled = !videoTrack.enabled; // Toggle video
+      setIsHide(!videoTrack.enabled);
+    }
+  };
+  
+
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
       <h2>Your Peer ID: {peerId}</h2>
@@ -107,6 +117,19 @@ const App = () => {
         }}
       >
         {isMuted ? "Unmute" : "Mute"}
+      </button>
+
+      <button
+        onClick={toggleVideo}
+        disabled={!call}
+        style={{
+          padding: "10px",
+          margin: "10px",
+          backgroundColor: isMuted ? "red" : "green",
+          color: "white",
+        }}
+      >
+        {isHide ? "Hide" : "Show"}
       </button>
 
       <div>
