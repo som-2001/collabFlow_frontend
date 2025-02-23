@@ -7,11 +7,13 @@ const App = () => {
   const [peer, setPeer] = useState(null);
   const [call, setCall] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [isHide, setIsHide] = useState(false);
   const [myStream, setMyStream] = useState(null);
-  const [isHide,setIsHide]=useState(false);
+  const [incomingCall, setIncomingCall] = useState(null); // Incoming call state
+  const [callerId, setCallerId] = useState(""); // Store caller's ID
 
-  const myVideoRef = useRef(); // ✅ Local video
-  const remoteVideoRef = useRef(); // ✅ Remote video
+  const myVideoRef = useRef();
+  const remoteVideoRef = useRef();
 
   useEffect(() => {
     const newPeer = new Peer(undefined, {
@@ -26,17 +28,9 @@ const App = () => {
     });
 
     newPeer.on("call", (incomingCall) => {
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true }) // ✅ Request video & audio
-        .then((stream) => {
-          setMyStream(stream);
-          myVideoRef.current.srcObject = stream; // ✅ Set local video stream
-          incomingCall.answer(stream);
-          incomingCall.on("stream", (remoteStream) => {
-            remoteVideoRef.current.srcObject = remoteStream; // ✅ Set remote video stream
-          });
-          setCall(incomingCall);
-        });
+      // Instead of auto-answering, show a notification
+      setIncomingCall(incomingCall);
+      setCallerId(incomingCall.peer); // Store caller ID
     });
 
     setPeer(newPeer);
@@ -47,13 +41,33 @@ const App = () => {
       .getUserMedia({ video: true, audio: true }) // ✅ Request video & audio
       .then((stream) => {
         setMyStream(stream);
-        myVideoRef.current.srcObject = stream; // ✅ Set local video
+        myVideoRef.current.srcObject = stream;
         const outgoingCall = peer.call(remotePeerId, stream);
         outgoingCall.on("stream", (remoteStream) => {
-          remoteVideoRef.current.srcObject = remoteStream; // ✅ Set remote video
+          remoteVideoRef.current.srcObject = remoteStream;
         });
         setCall(outgoingCall);
       });
+  };
+
+  const answerCall = () => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true }) // ✅ Get user video/audio
+      .then((stream) => {
+        setMyStream(stream);
+        myVideoRef.current.srcObject = stream;
+        incomingCall.answer(stream); // ✅ Answer call AFTER user accepts
+        incomingCall.on("stream", (remoteStream) => {
+          remoteVideoRef.current.srcObject = remoteStream;
+        });
+        setCall(incomingCall);
+        setIncomingCall(null); // ✅ Hide notification
+      });
+  };
+
+  const rejectCall = () => {
+    incomingCall.close(); // Reject the call
+    setIncomingCall(null); // Hide notification
   };
 
   const endCall = () => {
@@ -75,11 +89,10 @@ const App = () => {
   const toggleVideo = () => {
     if (myStream) {
       const videoTrack = myStream.getVideoTracks()[0];
-      videoTrack.enabled = !videoTrack.enabled; // Toggle video
+      videoTrack.enabled = !videoTrack.enabled;
       setIsHide(!videoTrack.enabled);
     }
   };
-  
 
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
@@ -125,21 +138,76 @@ const App = () => {
         style={{
           padding: "10px",
           margin: "10px",
-          backgroundColor: isMuted ? "red" : "green",
+          backgroundColor: isHide ? "red" : "green",
           color: "white",
         }}
       >
-        {isHide ? "Hide" : "Show"}
+        {isHide ? "Show Video" : "Hide Video"}
       </button>
 
+      {/* Incoming Call Notification */}
+      {incomingCall && (
+        <div
+          style={{
+            backgroundColor: "#333",
+            color: "white",
+            padding: "20px",
+            borderRadius: "10px",
+            marginTop: "20px",
+          }}
+        >
+          <h3>Incoming Call from {callerId}</h3>
+          <button
+            onClick={answerCall}
+            style={{
+              padding: "10px",
+              margin: "10px",
+              backgroundColor: "green",
+              color: "white",
+            }}
+          >
+            Answer
+          </button>
+          <button
+            onClick={rejectCall}
+            style={{
+              padding: "10px",
+              margin: "10px",
+              backgroundColor: "red",
+              color: "white",
+            }}
+          >
+            Reject
+          </button>
+        </div>
+      )}
+
+      {/* Video Section */}
       <div>
         <h3>My Video</h3>
-        <video ref={myVideoRef} autoPlay muted style={{ width: "300px", borderRadius: "10px" }}></video>
+        <video
+          ref={myVideoRef}
+          autoPlay
+          muted
+          style={{
+            width: "300px",
+            borderRadius: "10px",
+            backgroundColor: "black",
+          }}
+        ></video>
       </div>
 
       <div>
         <h3>Remote Video</h3>
-        <video ref={remoteVideoRef} autoPlay style={{ width: "300px", borderRadius: "10px" }}></video>
+        <video
+          ref={remoteVideoRef}
+          autoPlay
+          style={{
+            width: "300px",
+            borderRadius: "10px",
+            backgroundColor: "black",
+          }}
+        ></video>
       </div>
     </div>
   );
