@@ -6,11 +6,11 @@ const App = () => {
   const [remotePeerId, setRemotePeerId] = useState("");
   const [peer, setPeer] = useState(null);
   const [call, setCall] = useState(null);
-  const [isMuted, setIsMuted] = useState(false); // ✅ Track mute state
-  const [myStream, setMyStream] = useState(null); // ✅ Store local stream
+  const [isMuted, setIsMuted] = useState(false);
+  const [myStream, setMyStream] = useState(null);
 
-  const myAudioRef = useRef();
-  const remoteAudioRef = useRef();
+  const myVideoRef = useRef(); // ✅ Local video
+  const remoteVideoRef = useRef(); // ✅ Remote video
 
   useEffect(() => {
     const newPeer = new Peer(undefined, {
@@ -25,45 +25,49 @@ const App = () => {
     });
 
     newPeer.on("call", (incomingCall) => {
-      navigator.mediaDevices.getUserMedia({video:true, audio: true }).then((stream) => {
-        setMyStream(stream); // ✅ Store stream globally
-        myAudioRef.current.srcObject = stream;
-        incomingCall.answer(stream);
-        incomingCall.on("stream", (remoteStream) => {
-          remoteAudioRef.current.srcObject = remoteStream;
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true }) // ✅ Request video & audio
+        .then((stream) => {
+          setMyStream(stream);
+          myVideoRef.current.srcObject = stream; // ✅ Set local video stream
+          incomingCall.answer(stream);
+          incomingCall.on("stream", (remoteStream) => {
+            remoteVideoRef.current.srcObject = remoteStream; // ✅ Set remote video stream
+          });
+          setCall(incomingCall);
         });
-        setCall(incomingCall);
-      });
     });
 
     setPeer(newPeer);
   }, []);
 
   const callPeer = () => {
-    navigator.mediaDevices.getUserMedia({ video:true,audio: true }).then((stream) => {
-      setMyStream(stream); // ✅ Store stream globally
-      myAudioRef.current.srcObject = stream;
-      const outgoingCall = peer.call(remotePeerId, stream);
-      outgoingCall.on("stream", (remoteStream) => {
-        remoteAudioRef.current.srcObject = remoteStream;
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true }) // ✅ Request video & audio
+      .then((stream) => {
+        setMyStream(stream);
+        myVideoRef.current.srcObject = stream; // ✅ Set local video
+        const outgoingCall = peer.call(remotePeerId, stream);
+        outgoingCall.on("stream", (remoteStream) => {
+          remoteVideoRef.current.srcObject = remoteStream; // ✅ Set remote video
+        });
+        setCall(outgoingCall);
       });
-      setCall(outgoingCall);
-    });
   };
 
   const endCall = () => {
     if (call) {
       call.close();
       setCall(null);
-      remoteAudioRef.current.srcObject = null;
+      remoteVideoRef.current.srcObject = null;
     }
   };
 
   const toggleMute = () => {
     if (myStream) {
-      const audioTrack = myStream.getAudioTracks()[0]; // Get audio track
-      audioTrack.enabled = !audioTrack.enabled; // Toggle audio
-      setIsMuted(!audioTrack.enabled); // Update state
+      const audioTrack = myStream.getAudioTracks()[0];
+      audioTrack.enabled = !audioTrack.enabled;
+      setIsMuted(!audioTrack.enabled);
     }
   };
 
@@ -104,13 +108,15 @@ const App = () => {
       >
         {isMuted ? "Unmute" : "Mute"}
       </button>
+
       <div>
-       
-        <audio ref={myAudioRef} autoPlay muted></audio>
+        <h3>My Video</h3>
+        <video ref={myVideoRef} autoPlay muted style={{ width: "300px", borderRadius: "10px" }}></video>
       </div>
+
       <div>
-        
-        <audio ref={remoteAudioRef} autoPlay></audio>
+        <h3>Remote Video</h3>
+        <video ref={remoteVideoRef} autoPlay style={{ width: "300px", borderRadius: "10px" }}></video>
       </div>
     </div>
   );
