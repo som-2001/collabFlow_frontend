@@ -12,8 +12,8 @@ const App = () => {
 
   useEffect(() => {
     const newPeer = new Peer(undefined, {
-      host: "localhost",
-      port: "https://collabflow-backend.onrender.com",
+      host: "https://collabflow-backend.onrender.com",
+      port: 443,
       path: "/peerjs", // ✅ Ensure it matches the backend path
       secure: false, // ✅ Important for local development
     });
