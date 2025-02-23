@@ -25,7 +25,7 @@ const App = () => {
     });
 
     newPeer.on("call", (incomingCall) => {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      navigator.mediaDevices.getUserMedia({video:true, audio: true }).then((stream) => {
         setMyStream(stream); // ✅ Store stream globally
         myAudioRef.current.srcObject = stream;
         incomingCall.answer(stream);
@@ -40,7 +40,7 @@ const App = () => {
   }, []);
 
   const callPeer = () => {
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+    navigator.mediaDevices.getUserMedia({ video:true,audio: true }).then((stream) => {
       setMyStream(stream); // ✅ Store stream globally
       myAudioRef.current.srcObject = stream;
       const outgoingCall = peer.call(remotePeerId, stream);
